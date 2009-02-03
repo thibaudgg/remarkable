@@ -1,6 +1,26 @@
 module Remarkable # :nodoc:
   module Matcher # :nodoc:
     class Base
+      
+      class << self
+        def extract_options(options)
+          options.last.is_a?(::Hash) ? options.pop : {}
+        end
+        
+        def option(*opts)
+          name = opts.first.to_s
+          options = extract_options(opts)
+          class_eval <<-END
+            def #{name}(value#{ options[:default] ? "=#{options[:default]}" : "" })
+              @options ||= {}
+              @options[:#{name}] = value
+              self
+            end
+          END
+          class_eval "alias_method(:#{options[:alias]}, :#{name})" if options[:alias]
+        end
+      end
+      
       def negative
         @negative = true
         self
@@ -75,6 +95,10 @@ module Remarkable # :nodoc:
           end
         end
         positive?
+      end
+
+      def extract_options(*options)
+        options.last.is_a?(::Hash) ? options.pop : {}
       end
 
       def remove_parenthesis(text)

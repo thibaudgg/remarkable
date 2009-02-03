@@ -3,15 +3,15 @@ module Spec
     module ExampleMethods
       def should(matcher)
         if rspec_matcher?(matcher)
-          remarkable_response.should matcher
+          remarkable_response.should(matcher)
         elsif remarkable_active_record_matcher?(matcher)
-          remarkable_subject.should matcher
+          remarkable_subject.should(matcher)
         elsif remarkable_controller_matcher?(matcher)
-          remarkable_subject.should matcher.controller(remarkable_controller).
+          remarkable_subject.should(matcher.controller(remarkable_controller).
                                             response(remarkable_response).
                                             session(session).
                                             flash(flash).
-                                            spec(self)
+                                            spec(self))
         elsif exists_a_rspec_subject?
           subject.should(matcher)
         else

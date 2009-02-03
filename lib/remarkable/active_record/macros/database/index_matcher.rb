@@ -18,14 +18,11 @@ module Remarkable # :nodoc:
       class IndexMatcher < Remarkable::Matcher::Base
         INDEX_TYPES = { true => "unique", false => "non-unique" }
         
+        option :unique, :default => true
+        
         def initialize(*columns)
           load_options(columns)
           @columns = columns
-        end
-
-        def unique(value = true)
-          @options[:unique] = value
-          self
         end
 
         def table_name=(table_name)

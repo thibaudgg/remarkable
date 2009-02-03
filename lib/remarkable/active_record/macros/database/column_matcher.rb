@@ -2,55 +2,38 @@ module Remarkable # :nodoc:
   module ActiveRecord # :nodoc:
     module Matchers # :nodoc:
 
+      def have_db_column(column, options = {})
+        ColumnMatcher.new(column, options)
+      end
+
+      def have_db_columns(*columns)
+        ColumnMatcher.new(*columns)
+      end
+
       class ColumnMatcher < Remarkable::Matcher::Base
+
+        option :default
+        option :precision
+        option :limit
+        option :scale
+        option :sql_type
+        option :type,     :alias   => :of_type
+        option :null,     :default => true
+        option :primary,  :default => true
+        
         def initialize(*columns)
           @options = columns.extract_options!
           @columns  = columns
         end
 
-        def type(type)
-          @options[:type] = type
-          self
-        end
-
-        def primary(value = true)
-          @options[:primary] = value
-          self
-        end
-
-        def default(default)
-          @options[:default] = default
-          self
-        end
-
-        def precision(precision)
-          @options[:precision] = precision
-          self
-        end
-
-        def limit(limit)
-          @options[:limit] = limit
-          self
-        end
-
-        def null(value = true)
-          @options[:null] = value
-          self
-        end
-
-        def scale(scale)
-          @options[:scale] = scale
-          self
-        end
-
-        def sql_type(sql_type)
-          @options[:sql_type] = sql_type
+        def with_options(options = {})
+          load_options(options)
           self
         end
 
         def matches?(subject)
           @subject = subject
-          
+
           assert_matcher_for(@columns) do |column|
             @column = column
             has_column? && all_options_correct?
@@ -89,7 +72,9 @@ module Remarkable # :nodoc:
 
         def all_options_correct?
           @options.each do |option, value|
-            return false unless option_correct?(option, value)
+            unless value.nil?
+              return false unless option_correct?(option, value)
+            end
           end
         end
 
@@ -107,16 +92,18 @@ module Remarkable # :nodoc:
         def expectation
           "#{model_name} to have a column named #{@column}"
         end
+        
+        def load_options(options)
+          @options = {
+            :precision => nil,
+            :limit     => nil,
+            :default   => nil,
+            :null      => nil,
+            :scale     => nil,
+            :sql_type  => nil
+          }.merge(extract_options(options))
+        end
       end
-
-      def have_db_column(column, options = {})
-        ColumnMatcher.new(column, options)
-      end
-      
-      def have_db_columns(*columns)
-        ColumnMatcher.new(*columns)
-      end
-      
     end
   end
 end
