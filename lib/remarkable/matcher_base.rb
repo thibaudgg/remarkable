@@ -1,6 +1,20 @@
+Dir[File.join(File.dirname(__FILE__), "matcher_base", '*.rb')].each do |file|
+  require file
+end
+
 module Remarkable # :nodoc:
   module Matcher # :nodoc:
     class Base
+      include MessageDomain
+      
+      # Initialize our message_build class level instance variable in every
+      # class that inherit from us.
+      #
+      def self.inherited(base)
+        base.class_eval do
+          @messages_builder = MessagesBuilder.new
+        end
+      end
 
       ####################
       # CLASS METHODS
@@ -23,24 +37,6 @@ module Remarkable # :nodoc:
         class_eval "alias_method(:#{options[:alias]}, :#{name})" if options[:alias]
       end
 
-      def self.description(&block)
-        create_message "description", &block
-      end
-
-      def self.failure_message(&block)
-        create_message "failure_message", &block
-      end
-
-      def self.negative_failure_message(&block)
-        create_message "negative_failure_message", &block
-      end
-
-      def self.create_message(name, &block)
-        define_method(name) do
-          instance_eval(&block)
-        end
-      end
-
       ####################
       # INSTANCE METHODS
       ####################
@@ -51,32 +47,11 @@ module Remarkable # :nodoc:
         self
       end
 
-      def description
-        messages.instance_variable_get("@description")
-      end
-
-      def failure_message
-        messages.instance_variable_get("@failure_message")
-      end
-
-      def negative_failure_message
-        messages.instance_variable_get("@negative_failure_message")
-      end
-
 
 
       def negative
         @negative = true
         self
-      end
-
-      def failure_message
-        debugger
-        @failure_message ||= "Expected #{expectation} (#{@missing})"
-      end
-
-      def negative_failure_message
-        "Did not expect #{expectation}"
       end
 
       def controller(controller)
@@ -103,11 +78,6 @@ module Remarkable # :nodoc:
         @spec = spec
         self
       end
-
-      protected
-        def messages
-          self.class.instance_variable_get("@msg")
-        end
 
       private
 

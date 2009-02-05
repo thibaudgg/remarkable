@@ -11,17 +11,7 @@ module Remarkable # :nodoc:
       end
 
       class ColumnMatcher < Remarkable::Matcher::Base
-
-        description do
-          msg = @columns.size == 1 ? "have column named :#{@columns[0]}" : 
-            "have columns #{@columns.to_sentence}"
-            
-          msg << " with options " + @options.inspect unless @options.empty?
-          msg
-        end
-        failure_message { "Expected #{model_name} to have a column named #{@column} (#{@missing})" }
-        negative_failure_message { "Did not expect #{model_name} to have a column named #{@column}" }
-                
+        
         optional :default
         optional :precision
         optional :limit
@@ -30,6 +20,20 @@ module Remarkable # :nodoc:
         optional :type,     :alias   => :of_type
         optional :null,     :default => true
         optional :primary,  :default => true
+
+        messages do |msg|
+          msg.description do
+            msg = @columns.size == 1 ? "have column named :#{@columns[0]}" : 
+            "have columns #{@columns.to_sentence}"
+          
+            msg << " with options " + @options.inspect unless @options.empty?
+            msg
+          end
+
+          msg.failure { "Expected #{model_name} to have a column named #{@column} (#{@missing})" }
+
+          msg.negative_failure { "Did not expect #{model_name} to have a column named #{@column}" }
+        end
         
         def initialize(*columns)
           @options = columns.extract_options!
