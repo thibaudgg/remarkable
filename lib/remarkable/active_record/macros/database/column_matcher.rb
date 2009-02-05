@@ -12,23 +12,28 @@ module Remarkable # :nodoc:
 
       class ColumnMatcher < Remarkable::Matcher::Base
 
-        option :default
-        option :precision
-        option :limit
-        option :scale
-        option :sql_type
-        option :type,     :alias   => :of_type
-        option :null,     :default => true
-        option :primary,  :default => true
+        description do
+          msg = @columns.size == 1 ? "have column named :#{@columns[0]}" : 
+            "have columns #{@columns.to_sentence}"
+            
+          msg << " with options " + @options.inspect unless @options.empty?
+          msg
+        end
+        failure_message { "Expected #{model_name} to have a column named #{@column} (#{@missing})" }
+        negative_failure_message { "Did not expect #{model_name} to have a column named #{@column}" }
+                
+        optional :default
+        optional :precision
+        optional :limit
+        optional :scale
+        optional :sql_type
+        optional :type,     :alias   => :of_type
+        optional :null,     :default => true
+        optional :primary,  :default => true
         
         def initialize(*columns)
           @options = columns.extract_options!
           @columns  = columns
-        end
-
-        def with_options(options = {})
-          load_options(options)
-          self
         end
 
         def matches?(subject)
@@ -38,24 +43,6 @@ module Remarkable # :nodoc:
             @column = column
             has_column? && all_options_correct?
           end
-        end
-
-        def failure_message
-          "Expected #{expectation} (#{@missing})"
-        end
-
-        def negative_failure_message
-          "Did not expect #{expectation}"
-        end
-
-        def description
-          description = if @columns.size == 1
-            "have column named :#{@columns[0]}"
-          else
-            "have columns #{@columns.to_sentence}"
-          end
-          description << " with options " + @options.inspect unless @options.empty?
-          description
         end
 
         protected
@@ -87,21 +74,6 @@ module Remarkable # :nodoc:
             @missing = ":#{@column} column on table for #{model_class} does not match option :#{option}, found '#{found_value}' but expected '#{expected_value}'"
             false
           end
-        end
-
-        def expectation
-          "#{model_name} to have a column named #{@column}"
-        end
-        
-        def load_options(options)
-          @options = {
-            :precision => nil,
-            :limit     => nil,
-            :default   => nil,
-            :null      => nil,
-            :scale     => nil,
-            :sql_type  => nil
-          }.merge(extract_options(options))
         end
       end
     end

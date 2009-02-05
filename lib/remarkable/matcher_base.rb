@@ -1,33 +1,78 @@
 module Remarkable # :nodoc:
   module Matcher # :nodoc:
     class Base
-      
-      class << self
-        def extract_options(options)
-          options.last.is_a?(::Hash) ? options.pop : {}
+
+      ####################
+      # CLASS METHODS
+      ####################
+
+      def self.extract_options(options)
+        options.last.is_a?(::Hash) ? options.pop : {}
+      end
+
+      def self.optional(*opts)
+        name = opts.first.to_s
+        options = extract_options(opts)
+        class_eval <<-END
+        def #{name}(value#{ options[:default] ? "=#{options[:default]}" : "" })
+          @options ||= {}
+          @options[:#{name}] = value
+          self
         end
-        
-        def option(*opts)
-          name = opts.first.to_s
-          options = extract_options(opts)
-          class_eval <<-END
-            def #{name}(value#{ options[:default] ? "=#{options[:default]}" : "" })
-              @options ||= {}
-              @options[:#{name}] = value
-              self
-            end
-          END
-          class_eval "alias_method(:#{options[:alias]}, :#{name})" if options[:alias]
+        END
+        class_eval "alias_method(:#{options[:alias]}, :#{name})" if options[:alias]
+      end
+
+      def self.description(&block)
+        create_message "description", &block
+      end
+
+      def self.failure_message(&block)
+        create_message "failure_message", &block
+      end
+
+      def self.negative_failure_message(&block)
+        create_message "negative_failure_message", &block
+      end
+
+      def self.create_message(name, &block)
+        define_method(name) do
+          instance_eval(&block)
         end
       end
-      
+
+      ####################
+      # INSTANCE METHODS
+      ####################
+
+      def with_options(options = {})
+        @options ||= []
+        @options.merge!(options)
+        self
+      end
+
+      def description
+        messages.instance_variable_get("@description")
+      end
+
+      def failure_message
+        messages.instance_variable_get("@failure_message")
+      end
+
+      def negative_failure_message
+        messages.instance_variable_get("@negative_failure_message")
+      end
+
+
+
       def negative
         @negative = true
         self
       end
 
       def failure_message
-        "Expected #{expectation} (#{@missing})"
+        debugger
+        @failure_message ||= "Expected #{expectation} (#{@missing})"
       end
 
       def negative_failure_message
@@ -38,7 +83,7 @@ module Remarkable # :nodoc:
         @controller = controller
         self
       end
-      
+
       def response(response)
         @response = response
         self
@@ -58,6 +103,11 @@ module Remarkable # :nodoc:
         @spec = spec
         self
       end
+
+      protected
+        def messages
+          self.class.instance_variable_get("@msg")
+        end
 
       private
 
