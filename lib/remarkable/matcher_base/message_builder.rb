@@ -1,6 +1,6 @@
 # Class for messages processing of the matchers.
 # 
-class MessagesBuilder
+class MessageBuilder
   def initialize
     @description      = nil
     @failure          = nil

@@ -12,6 +12,8 @@ module Remarkable # :nodoc:
 
       class ColumnMatcher < Remarkable::Matcher::Base
         
+        default :columns
+        
         optional :default
         optional :precision
         optional :limit
@@ -23,11 +25,9 @@ module Remarkable # :nodoc:
 
         messages do |msg|
           msg.description do
-            msg = @columns.size == 1 ? "have column named :#{@columns[0]}" : 
-            "have columns #{@columns.to_sentence}"
-          
-            msg << " with options " + @options.inspect unless @options.empty?
-            msg
+            result = "have column#{ @columns.size == 1 ? " named :#{@columns[0]}" : "s #{@columns.to_sentence}" }"
+            result << " with options " + @options.inspect unless @options.empty?
+            result
           end
 
           msg.failure { "Expected #{model_name} to have a column named #{@column} (#{@missing})" }
@@ -35,10 +35,10 @@ module Remarkable # :nodoc:
           msg.negative_failure { "Did not expect #{model_name} to have a column named #{@column}" }
         end
         
-        def initialize(*columns)
-          @options = columns.extract_options!
-          @columns  = columns
-        end
+        # def initialize(*columns)
+        #           @options = columns.extract_options!
+        #           @columns  = columns
+        #         end
 
         def matches?(subject)
           @subject = subject

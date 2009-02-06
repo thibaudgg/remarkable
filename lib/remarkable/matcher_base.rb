@@ -1,52 +1,45 @@
-Dir[File.join(File.dirname(__FILE__), "matcher_base", '*.rb')].each do |file|
-  require file
-end
+require "remarkable/matcher_base/matcher_specific_language"
 
 module Remarkable # :nodoc:
   module Matcher # :nodoc:
     class Base
       include MessageDomain
+      include OptionalDomain
       
+      ####################
+      # CLASS METHODS
+      ####################
+
       # Initialize our message_build class level instance variable in every
       # class that inherit from us.
       #
       def self.inherited(base)
         base.class_eval do
-          @messages_builder = MessagesBuilder.new
+          @messages_builder = MessageBuilder.new
         end
       end
-
-      ####################
-      # CLASS METHODS
-      ####################
 
       def self.extract_options(options)
         options.last.is_a?(::Hash) ? options.pop : {}
       end
 
-      def self.optional(*opts)
-        name = opts.first.to_s
-        options = extract_options(opts)
-        class_eval <<-END
-        def #{name}(value#{ options[:default] ? "=#{options[:default]}" : "" })
-          @options ||= {}
-          @options[:#{name}] = value
-          self
-        end
-        END
-        class_eval "alias_method(:#{options[:alias]}, :#{name})" if options[:alias]
+      def self.default(name)
+        
       end
 
       ####################
       # INSTANCE METHODS
       ####################
-
-      def with_options(options = {})
-        @options ||= []
-        @options.merge!(options)
-        self
+      def initialize(*options)
+        @options = options.extract_options!
+        @default = options
       end
+      
 
+      def initialize(*options)
+        @options = options.extract_options!
+        @default = options
+      end
 
 
       def negative

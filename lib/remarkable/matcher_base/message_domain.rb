@@ -36,8 +36,6 @@ module MessageDomain
         else
           "No message for this matcher! :/"
         end
-      end
-      
+      end 
   end
-
 end
