@@ -4,15 +4,18 @@ module Remarkable # :nodoc:
       class ValidateUniquenessOfMatcher < Remarkable::Matcher::Base
         include Remarkable::ActiveRecord::Helpers
 
-        arguments :attributes
-        optional :case_sensitive, :default => true
-
-        assertions :find_first_object?, :have_attribute?, :case_sensitive?,
-                   :valid_when_changing_scoped_attribute?, :find_nil_object?,
-                   :allow_nil?, :find_blank_object?, :allow_blank?
+        def initialize(*attributes)
+          load_options(attributes.extract_options!)
+          @attributes = attributes
+        end
 
         def scope(scope)
           @options[:scope] = [*scope].compact
+          self
+        end
+
+        def case_sensitive(value = true)
+          @options[:case_sensitive] = value
           self
         end
 
@@ -23,6 +26,18 @@ module Remarkable # :nodoc:
                "Use should_validate_uniqueness_of.scope instead."
           @options[:scope] = [*scoped].compact
           self
+        end
+
+        def matches?(subject)
+          @subject = get_instance_of(subject)
+
+          assert_matcher_for(@attributes) do |attribute|
+            @attribute = attribute
+
+            find_first_object? && have_attribute? && case_sensitive? &&
+            valid_when_changing_scoped_attribute? && find_nil_object? &&
+            allow_nil? && find_blank_object? && allow_blank?
+          end
         end
 
         def description
@@ -38,29 +53,6 @@ module Remarkable # :nodoc:
         end
 
         private
-
-        # Before make the assertions, convert the subject into a instance, if
-        # it's not already.
-        #
-        def before_assert!
-          @subject = get_instance_of(@subject)
-        end
-
-        def default_options
-          { :message => :taken }
-        end
-
-        def after_initialize!
-          if @options[:scoped_to] # TODO Deprecate scoped_to
-            warn "[DEPRECATION] should_require_unique_attributes with :scoped_to is deprecated. " <<
-                 "Use should_validate_uniqueness_of with :scope instead."
-            @options[:scope] = [*@options.delete(:scoped_to)].compact
-          else
-            warn "[DEPRECATION] should_require_unique_attributes is deprecated. " <<
-                 "Use should_validate_uniqueness_of instead."
-            @options[:scope] = [*@options[:scope]].compact
-          end
-        end
 
         # Tries to find an object in the database.
         #
@@ -137,6 +129,7 @@ module Remarkable # :nodoc:
         #
         def case_sensitive?
           message = "case sensitive when attribute is #{@attribute}"
+          return true unless @value.is_a?(String)
           assert_good_or_bad_if_key(:case_sensitive, @value.swapcase, message)
         end
 
@@ -161,6 +154,20 @@ module Remarkable # :nodoc:
         #
         def new_value_for_scope(scope)
           (@existing.send(scope) || 999).next
+        end
+
+        def load_options(options)
+          @options = {
+            :message => :taken
+          }.merge(options)
+
+          if options[:scoped_to] # TODO Deprecate scoped_to
+            warn "[DEPRECATION] :scoped_to otption is deprecated. " <<
+                 "use :scope instead."
+            @options[:scope] = [*options[:scoped_to]].compact
+          else
+            @options[:scope] = [*options[:scope]].compact
+          end
         end
 
         def expectation
@@ -207,8 +214,13 @@ module Remarkable # :nodoc:
       def validate_uniqueness_of(*attributes)
         ValidateUniquenessOfMatcher.new(*attributes)
       end
+      
       #TODO Deprecate this alias, the deprecation warning is the matcher
-      alias :require_unique_attributes :validate_uniqueness_of
+      def require_unique_attributes(*attributes)
+        warn "[DEPRECATION] should_require_unique_attributes is deprecated. " <<
+             "Use should_validate_uniqueness_of instead."
+        ValidateUniquenessOfMatcher.new(*attributes)
+      end
     end
   end
 end
